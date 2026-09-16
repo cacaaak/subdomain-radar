@@ -387,10 +387,6 @@
       Contoh: <b>example.com</b>
     </div>
   </main>
-
-  <div class="note">
-    Data diambil dari log publik Certificate Transparency (crt.sh). Gunakan hanya pada domain milik sendiri atau yang sudah berizin untuk diuji.
-  </div>
 </div>
 
 <script>
@@ -630,15 +626,10 @@ function wireActionBar(domain){
 let lastResultsData = []; // [{sub, ip, cf}]
 
 function renderResults(domain, subs){
-  const failures = subs._failures || [];
-  const failureNote = failures.length
-    ? `<div class="note" style="margin-top:14px; border-top:none; padding-top:0;">Sebagian sumber tidak merespons (hasil di bawah tetap valid dari sumber lain):<br>${failures.map(escapeHTML).join('<br>')}</div>`
-    : '';
-
   lastResultsData = subs.map(s => ({ sub: s, ip: null, cf: false }));
 
   if (subs.length === 0){
-    main.innerHTML = emptyHTML(`Tidak ditemukan subdomain untuk <b>${escapeHTML(domain)}</b>.`) + failureNote;
+    main.innerHTML = emptyHTML(`Tidak ditemukan subdomain untuk <b>${escapeHTML(domain)}</b>.`);
     return;
   }
   const statusLine = `
@@ -650,7 +641,7 @@ function renderResults(domain, subs){
     subs.map(s => `<li data-sub="${escapeHTML(s)}"><span class="dot"></span><span class="name">${escapeHTML(s)}</span><span class="cf" title="Terdeteksi di belakang Cloudflare">CF</span><span class="ip">···</span></li>`).join('')
   }</ul>`;
   const actionBar = buildActionBar(domain);
-  main.innerHTML = statusLine + list + actionBar + '<div id="ipGroupContainer"></div>' + failureNote;
+  main.innerHTML = statusLine + list + actionBar + '<div id="ipGroupContainer"></div>';
   wireActionBar(domain);
 
   if (resolveCheck.checked){
