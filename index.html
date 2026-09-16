@@ -202,7 +202,7 @@
     font-size:12px;
     flex-shrink:0;
   }
-  ul.results li .cf{
+  .cf{
     flex-shrink:0;
     font-size:10.5px;
     font-weight:600;
@@ -214,8 +214,8 @@
     border:1px solid var(--line);
     visibility:hidden;
   }
-  ul.results li .cf.show{ visibility:visible; }
-  ul.results li .cf.yes{
+  .cf.show{ visibility:visible; }
+  .cf.yes{
     color:#F6821F;
     border-color:#7a4718;
     background:#2a1c0d;
@@ -245,7 +245,56 @@
   }
   .action-bar button:active{ background:var(--panel-2); }
   .action-bar button svg{ width:14px; height:14px; flex-shrink:0; }
+  .ip-group{
+    margin-top:22px;
+    border-top:1px solid var(--line);
+    padding-top:14px;
+  }
+  .ip-group h2{
+    font-size:13px;
+    font-weight:600;
+    margin:0 0 10px;
+    color:var(--text);
+  }
+  .ip-group table{
+    width:100%;
+    border-collapse:collapse;
+    font-family:var(--mono);
+    font-size:12.5px;
+  }
+  .ip-group th{
+    text-align:left;
+    color:var(--muted);
+    font-family:"Space Grotesk", sans-serif;
+    font-weight:600;
+    font-size:11.5px;
+    padding:0 0 8px;
+    border-bottom:1px solid var(--line);
+  }
+  .ip-group th:last-child, .ip-group td:last-child{ text-align:right; }
+  .ip-group td{
+    padding:8px 0;
+    border-bottom:1px solid var(--line);
+    color:var(--text);
+    overflow-wrap:anywhere;
+  }
+  .ip-group td.count{ color:var(--accent); font-weight:600; }
   .toast{
+    position:fixed;
+    left:50%;
+    bottom:24px;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--accent);
+    color:#1B1002;
+    font-size:13px;
+    font-weight:600;
+    padding:10px 18px;
+    border-radius:20px;
+    opacity:0;
+    transition:opacity .2s ease, transform .2s ease;
+    pointer-events:none;
+    z-index:50;
+  }
     position:fixed;
     left:50%;
     bottom:24px;
@@ -601,7 +650,7 @@ function renderResults(domain, subs){
     subs.map(s => `<li data-sub="${escapeHTML(s)}"><span class="dot"></span><span class="name">${escapeHTML(s)}</span><span class="cf" title="Terdeteksi di belakang Cloudflare">CF</span><span class="ip">···</span></li>`).join('')
   }</ul>`;
   const actionBar = buildActionBar(domain);
-  main.innerHTML = statusLine + list + actionBar + failureNote;
+  main.innerHTML = statusLine + list + actionBar + '<div id="ipGroupContainer"></div>' + failureNote;
   wireActionBar(domain);
 
   if (resolveCheck.checked){
@@ -609,6 +658,31 @@ function renderResults(domain, subs){
   } else {
     document.querySelectorAll('#resultsList li .ip').forEach(el => el.textContent = '');
   }
+}
+
+function renderIpGroupTable(){
+  const container = document.getElementById('ipGroupContainer');
+  if (!container) return;
+
+  const counts = new Map();
+  for (const r of lastResultsData){
+    if (!r.ip) continue;
+    counts.set(r.ip, (counts.get(r.ip) || 0) + 1);
+  }
+  if (counts.size === 0){ container.innerHTML = ''; return; }
+
+  const rows = Array.from(counts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
+  container.innerHTML = `
+    <div class="ip-group">
+      <h2>Pengelompokan berdasarkan IP</h2>
+      <table>
+        <thead><tr><th>IP</th><th>Jumlah</th></tr></thead>
+        <tbody>
+          ${rows.map(([ip, count]) => `<tr><td>${escapeHTML(ip)} ${isCloudflareIP(ip) ? '<span class="cf show yes" style="visibility:visible; margin-left:6px;">CF</span>' : ''}</td><td class="count">${count}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
 }
 
 async function resolveAll(subs){
@@ -645,6 +719,7 @@ async function resolveAll(subs){
   });
 
   await Promise.all(checks);
+  renderIpGroupTable();
 }
 
 form.addEventListener('submit', async (e) => {
